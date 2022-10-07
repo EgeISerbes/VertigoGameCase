@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af80852e4cba8e24889d6172f5234ee9, type: 3}
+  m_Name: RouletteSettings
+  m_EditorClassIdentifier: 
+  _spinForSeconds: 3
+  _rotationIncreaseValue: 5
+  _rotationApproachRate: 0.2
+  _wiggleApproachRate: 0.2
+  _wiggleWaitForSeconds: 0.5
+  _targetWiggleDegree: 15
+  _divisionAmounSD: 2
+  _targetAmountForDivisionEnd: 1
