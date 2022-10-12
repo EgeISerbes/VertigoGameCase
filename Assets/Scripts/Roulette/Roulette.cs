@@ -5,27 +5,27 @@ using UnityEngine;
 public class Roulette : MonoBehaviour
 {
     [SerializeField] private Transform _listTR;
-    [SerializeField] private RouletteSettings _rSettings;
+    private RouletteSettings _rSettings;
 
     [Header("Roulette and Slices Settings")]
     private List<RouletteSlice> _rouletteSlices = new List<RouletteSlice>();
     private RouletteSlice _targetSlice;
 
-    [Header("Spin Seconds Settings")]
-    private float _currentSpinForSeconds;
-    private float _timer = 0f;
 
 
     [Header("Spin Degree Settings")]
+   [SerializeField] public float _startDegree = 0f;
     private float _currentDegree = 0f;
+    private float _degreeRotated = 0f;
     private float _degreeBetweenEachSlice = 0f;
-    private float _targetDegree = 0f;
+    public float _targetDegree = 0f;
+    private float _targetRotationDegree = 0f;
     private float _currentRotationIncreaseValue = 0f;
     private bool _canRotate = false;
+    private bool _canDecrease = false;
     private bool _canApproachTarget = false;
 
-    [Header("Spin Wiggle Settings")]
-    private bool _canWiggle = false;
+    
 
     [Header("Spin Chance Settings")]
     private float _totalChance;
@@ -34,13 +34,21 @@ public class Roulette : MonoBehaviour
     private float _targetChance;
     private float _chanceRateToAdd;
 
-    private void Awake()
+    private System.Action<RouletteSlice> OnReceiveSlice;
+
+    
+
+    public void Init(System.Action<RouletteSlice> OnReceiveSlice, RouletteSettings rSettings)
+
     {
-        _currentRotationIncreaseValue = _rSettings._rotationIncreaseValue;
-        _currentSpinForSeconds = _rSettings._spinForSeconds;
+        this.OnReceiveSlice = OnReceiveSlice;
+        _rSettings = rSettings;
+
+        Init();
         _degreeBetweenEachSlice = 360 / (_listTR.childCount);
         foreach (RouletteSlice slice in _listTR.GetComponentsInChildren<RouletteSlice>())
         {
+            slice.Init();
             _rouletteSlices.Add(slice);
             slice.degree = _currentDegree;
             _currentDegree += _degreeBetweenEachSlice;
@@ -48,28 +56,34 @@ public class Roulette : MonoBehaviour
         }
         _divisionRate = _totalChance / CHANCEDIVIDER;
     }
-
     public void Init()
     {
+        _currentRotationIncreaseValue = _rSettings._rotationIncreaseValue;
+        transform.eulerAngles = new Vector3(0, 0, _startDegree);
 
     }
-
+    public void SetStartPos(float startDegree)
+    {
+        _startDegree = startDegree;
+    }   
+    public float GetStartPos()
+    {
+        return _startDegree;
+    }
     // Update is called once per frame
     void Update()
     {
         if (_canRotate)
         {
-            transform.eulerAngles += new Vector3(0, 0, _currentRotationIncreaseValue * Time.deltaTime);
+            transform.eulerAngles = Vector3.MoveTowards(transform.eulerAngles, new Vector3(0, 0, _targetRotationDegree), _currentRotationIncreaseValue * Time.deltaTime);
+            _degreeRotated += _currentRotationIncreaseValue * Time.deltaTime;
+
         }
-        else if(_canApproachTarget)
+        else if (_canApproachTarget)
         {
-            transform.eulerAngles = Vector3.Slerp(transform.eulerAngles, new Vector3(0, 0, _targetDegree), _rSettings._rotationApproachRate);
-            if (transform.eulerAngles.z == _targetDegree) _canApproachTarget = false;
+            transform.eulerAngles = Vector3.Lerp(transform.eulerAngles, new Vector3(0, 0, _targetDegree), _rSettings._rotationApproachRate);
         }
-        else if (_canWiggle)
-        {
-            transform.eulerAngles = Vector3.Slerp(transform.eulerAngles, new Vector3(0, 0, _rSettings._targetWiggleDegree), _rSettings._wiggleApproachRate);
-        }
+        
     }
 
     private void SelectTargetSlice()
@@ -91,26 +105,53 @@ public class Roulette : MonoBehaviour
     public IEnumerator Spin()
     {
         SelectTargetSlice();
+        _targetRotationDegree =360 * _rSettings.totalRotationCount;
+
         _canRotate = true;
-        for (float i = _rSettings._spinForSeconds; i>= _rSettings._targetAmountForDivisionEnd; i/= _rSettings._divisionAmounSD)
-        {   
-            yield return new WaitForSeconds(_currentSpinForSeconds);
-            _currentSpinForSeconds /= _rSettings._divisionAmounSD;
-            _currentRotationIncreaseValue /= _rSettings._divisionAmounSD;
+        while (_canRotate)
+        {
+            yield return new WaitUntil(() => _degreeRotated >= _targetRotationDegree);
+            _degreeRotated = 0;
+            break;
+            
         }
+
+        _canDecrease = true;
+        
+        int secondRotationAmount = Mathf.FloorToInt(_rSettings.totalRotationCount / _rSettings.divisionAmount);
+        float decreaseDivisionAmount = 0;
+        _targetRotationDegree =_targetDegree + 360 *secondRotationAmount -_startDegree ;
+        decreaseDivisionAmount = _targetRotationDegree / 360;
+        while (_canDecrease)
+        {
+            _currentRotationIncreaseValue = (_currentRotationIncreaseValue -_rSettings._targetRotationDecreaseValue*Time.deltaTime/decreaseDivisionAmount <= _rSettings._targetRotationValue) ? _rSettings._targetRotationValue :
+            _currentRotationIncreaseValue - _rSettings._targetRotationDecreaseValue *Time.deltaTime / decreaseDivisionAmount;
+            yield return new WaitForEndOfFrame();
+            if (_degreeRotated >= _targetRotationDegree) break;
+        }
+        _degreeRotated = 0;
         _canRotate = false;
         _canApproachTarget = true;
-        transform.eulerAngles = new Vector3(0, 0, transform.eulerAngles.z % 360);
-        while (_canApproachTarget) continue;
-        _canWiggle = true;
-        for (int i = 0; i <=2 ; i++)
+        //_targetRotationDegree = (_targetDegree >= 180) ? (_targetDegree - 180) * (-1) : _targetDegree;
+        yield return new WaitUntil(() => Mathf.FloorToInt(transform.eulerAngles.z) == _targetDegree);
+        Debug.Log("burada");
+        _canApproachTarget = false;
+        
+        _canRotate = true;
+        _targetRotationDegree = _targetDegree + _rSettings._targetWiggleDegree;
+        for (int j = 0; j < 1; j++)
         {
-            yield return new WaitForSeconds(_rSettings._wiggleWaitForSeconds * (i + 1));
-            _rSettings._targetWiggleDegree *= -1;
-        }
-        _canWiggle = false;
-        _canApproachTarget = true;
-        while (_canApproachTarget) continue;
+            Debug.Log("burada " + j);
 
+            yield return new WaitUntil(() => (_degreeRotated>=_rSettings._targetWiggleDegree));
+            _degreeRotated = 0;
+        }
+        
+        _canRotate = false;
+        _canApproachTarget = true;
+        yield return new WaitUntil(() => Mathf.FloorToInt(transform.eulerAngles.z) == _targetDegree);
+        _canApproachTarget = false;
+        _startDegree = _targetDegree;
+        OnReceiveSlice(_targetSlice);
     }
 }

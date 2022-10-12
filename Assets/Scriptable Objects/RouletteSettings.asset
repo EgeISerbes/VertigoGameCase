@@ -12,11 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af80852e4cba8e24889d6172f5234ee9, type: 3}
   m_Name: RouletteSettings
   m_EditorClassIdentifier: 
-  _spinForSeconds: 3
-  _rotationIncreaseValue: 5
-  _rotationApproachRate: 0.2
-  _wiggleApproachRate: 0.2
+  _spinForSeconds: 5
+  totalRotationCount: 4
+  _rotationIncreaseValue: 200
+  _rotationApproachRate: 0.005
+  _wiggleIncreaseRate: 0
   _wiggleWaitForSeconds: 0.5
-  _targetWiggleDegree: 15
-  _divisionAmounSD: 2
-  _targetAmountForDivisionEnd: 1
+  _targetWiggleDegree: 7
+  _targetRotationValue: 25
+  _targetRotationDecreaseValue: 60
+  divisionAmount: 2

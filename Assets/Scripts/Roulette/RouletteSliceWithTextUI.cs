@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-public class RouletteSliceWithText : RouletteSlice
+public class RouletteSliceWithTextUI : RouletteSlice
 {
     [SerializeField] private TextMeshProUGUI _uiText;
     public override void Init()
