@@ -10,6 +10,8 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        Screen.orientation = ScreenOrientation.LandscapeLeft;
+
         _levelManager.Init();
         _levelManager.getLevelData();
         if(_levelManager.DataFile.list != null) _uiManager.itemList.CopyItems(_levelManager.DataFile.list);
